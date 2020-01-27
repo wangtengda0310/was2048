@@ -28,7 +28,23 @@ export default class GameControl extends Laya.Script {
             this.createBox();
         }
     }
-
+    onMouseDown(e) {
+        this.dragX = e.stageX;
+        this.dragY = e.stageY;
+    }
+    onMouseUp(e) {
+        let x = e.stageX - this.dragX;
+        let y = e.stageY - this.dragY;
+        alert(e.stageX);
+        alert(e.stageY);
+        alert(x);
+        alert(y);
+        if (Math.abs(x) - Math.abs(y) > 0) {
+            Laya.stage.graphics.drawLine(this.dragX, this.dragY, this.dragX + x, this.dragY, "#ff0000");
+        } else {
+            Laya.stage.graphics.drawLine(this.dragX, this.dragY, this.dragX, this.dragY + y, "#ff0000");
+        }
+    }
     createBox() {
         let boxWidth = 100;
         //使用对象池创建盒子
