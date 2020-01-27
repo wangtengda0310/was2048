@@ -16,7 +16,7 @@ export default class DropBox extends Laya.Script {
 
     onUpdate() {
         //让持续盒子旋转
-        this.owner.rotation++;
+        // this.owner.rotation++;
     }
 
     onTriggerEnter(other, self, contact) {
