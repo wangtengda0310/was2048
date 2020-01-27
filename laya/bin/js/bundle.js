@@ -56,7 +56,6 @@
             let now = Date.now();
             if (now - this._time > this.createBoxInterval&&this._started) {
                 this._time = now;
-                this.createBox();
             }
         }
         onMouseDown(e) {
@@ -66,21 +65,47 @@
         onMouseUp(e) {
             let x = e.stageX - this.dragX;
             let y = e.stageY - this.dragY;
-            alert(e.stageX);
-            alert(e.stageY);
-            alert(x);
-            alert(y);
             if (Math.abs(x) - Math.abs(y) > 0) {
-                Laya.stage.graphics.drawLine(this.dragX, this.dragY, this.dragX + x, this.dragY, "#ff0000");
+                if (this.debugDrag) {
+                    Laya.stage.graphics.drawLine(this.dragX, this.dragY, this.dragX + x, this.dragY, "#ff0000");
+                }
+                if (x > 0) {
+                    this.createMultiBoxes(3, 'left');
+                } else {
+                    this.createMultiBoxes(3, 'right');
+                }
             } else {
-                Laya.stage.graphics.drawLine(this.dragX, this.dragY, this.dragX, this.dragY + y, "#ff0000");
+                if (this.debugDrag) {
+                    Laya.stage.graphics.drawLine(this.dragX, this.dragY, this.dragX, this.dragY + y, "#ff0000");
+                }
+                if (y > 0) {
+                    this.createMultiBoxes(3, 'top');
+                } else {
+                    this.createMultiBoxes(3, 'bottom');
+                }
             }
         }
-        createBox() {
+        createMultiBoxes(count, birthPlace) {
+            for(let i = 0; i< count; i++) {
+                this.createBox(birthPlace);
+            }
+
+        }
+        createBox(birthPlace) {
+            alert(birthPlace);
             let boxWidth = 100;
             //使用对象池创建盒子
             let box = Laya.Pool.getItemByCreateFun("dropBox", this.dropBox.create, this.dropBox);
-            box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, 0);
+            if ('left' == birthPlace) {
+                alert(Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+                box.pos(0, Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+            } else if ('right' == birthPlace) {
+                box.pos(Laya.stage.width - boxWidth, Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+            } else if ('top' == birthPlace) {
+                box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, 0);
+            } else  {
+                box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, Laya.stage.height - boxWidth);
+            }
             this._gameBox.addChild(box);
         }
 
