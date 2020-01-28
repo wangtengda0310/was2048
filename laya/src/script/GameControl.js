@@ -1,36 +1,28 @@
-import Bullet from "./Bullet";
+// import Bullet from "./Bullet";
 /**
- * 游戏控制脚本。定义了几个dropBox，bullet，createBoxInterval等变量，能够在IDE显示及设置该变量
+ * 游戏控制脚本。定义了几个dropBox，bullet等变量，能够在IDE显示及设置该变量
  * 更多类型定义，请参考官方文档
  */
 export default class GameControl extends Laya.Script {
     /** @prop {name:dropBox,tips:"掉落容器预制体对象",type:Prefab}*/
-    /** @prop {name:bullet,tips:"子弹预制体对象",type:Prefab}*/
-    /** @prop {name:createBoxInterval,tips:"间隔多少毫秒创建一个下跌的容器",type:int,default:1000}*/
 
     constructor() { super(); }
     onEnable() {
-        //间隔多少毫秒创建一个下跌的容器
-        this.createBoxInterval = 1000;
-        //开始时间
-        this._time = Date.now();
         //是否已经开始游戏
         this._started = false;
         //子弹和盒子所在的容器对象
         this._gameBox = this.owner.getChildByName("gameBox");
+        this.all = [];
     }
 
     onUpdate() {
-        //每间隔一段时间创建一个盒子
-        let now = Date.now();
-        if (now - this._time > this.createBoxInterval&&this._started) {
-            this._time = now;
-        }
     }
+
     onMouseDown(e) {
         this.dragX = e.stageX;
         this.dragY = e.stageY;
     }
+
     onMouseUp(e) {
         let x = e.stageX - this.dragX;
         let y = e.stageY - this.dragY;
@@ -40,8 +32,10 @@ export default class GameControl extends Laya.Script {
             }
             if (x > 0) {
                 this.createMultiBoxes(3, 'left');
+                this.moveAll('right');
             } else {
                 this.createMultiBoxes(3, 'right');
+                this.moveAll('left');
             }
         } else {
             if (this.debugDrag) {
@@ -49,40 +43,62 @@ export default class GameControl extends Laya.Script {
             }
             if (y > 0) {
                 this.createMultiBoxes(3, 'top');
+                this.moveAll('down');
             } else {
                 this.createMultiBoxes(3, 'bottom');
+                this.moveAll('up');
             }
         }
     }
+
+    moveAll(direction) {
+        Laya.stage.event("move",direction);
+        let all = this.all;
+
+        if ('left' == direction) {
+        } else if ('right' == direction) {
+        } else if ('up' == direction) {
+        } else {
+        }
+    }
+
     createMultiBoxes(count, birthPlace) {
         for(let i = 0; i< count; i++) {
             this.createBox(birthPlace);
         }
 
     }
+
     createBox(birthPlace) {
         let boxWidth = 100;
         //使用对象池创建盒子
         let box = Laya.Pool.getItemByCreateFun("dropBox", this.dropBox.create, this.dropBox);
+        console.log(box);
         if ('left' == birthPlace) {
-            box.pos(0, Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+            let tileY = Math.floor(Math.random() * (Laya.stage.height / boxWidth - 2));
+            box.pos(0, tileY * boxWidth + boxWidth);
         } else if ('right' == birthPlace) {
-            box.pos(Laya.stage.width - boxWidth, Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+            let tileX = 11;
+            let tileY = Math.floor(Math.random() * (Laya.stage.height / boxWidth - 2));
+            box.pos(Laya.stage.width - boxWidth * 1, tileY * boxWidth + boxWidth);
         } else if ('top' == birthPlace) {
-            box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, 0);
+            let tileX = Math.floor(Math.random() * (Laya.stage.width / boxWidth - 2));
+            box.pos(tileX * boxWidth + boxWidth, 0);
         } else  {
-            box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, Laya.stage.height - boxWidth);
+            let tileX = Math.floor(Math.random() * (Laya.stage.width / boxWidth - 2));
+            let tileY = 11;
+            box.pos(tileX * boxWidth + boxWidth, Laya.stage.height - boxWidth);
         }
         this._gameBox.addChild(box);
+        this.all.push(box);
+
+        Laya.stage.event("create", box);
+
     }
 
     onStageClick(e) {
         //停止事件冒泡，提高性能，当然也可以不要
         e.stopPropagation();
-        //舞台被点击后，使用对象池创建子弹
-        let flyer = Laya.Pool.getItemByCreateFun("bullet", this.bullet.create, this.bullet);
-        flyer.pos(Laya.stage.mouseX, Laya.stage.mouseY);
-        this._gameBox.addChild(flyer);
     }
 
     /**开始游戏，通过激活本脚本方式开始游戏*/
@@ -97,7 +113,6 @@ export default class GameControl extends Laya.Script {
     stopGame() {
         this._started = false;
         this.enabled = false;
-        this.createBoxInterval = 1000;
         this._gameBox.removeChildren();
     }
 }

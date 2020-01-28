@@ -12,6 +12,26 @@ export default class DropBox extends Laya.Script {
         //等级文本对象引用
         this._text = this.owner.getChildByName("levelTxt");
         this._text.text = this.level + "";
+        this.tilePosX = -1;
+        this.tilePosY = -1;
+        this.tileLeft = null;
+        this.tileRight = null;
+        this.tileUp = null;
+        this.tileDown = null;
+        Laya.stage.on("move",this, this.onMove);
+        Laya.stage.on("create",this, this.onCreate);
+    }
+
+    onMove(direction) {
+        alert(direction);
+    }
+
+    onCreate(dropBox) {
+        alert("create"+dropBox);
+    }
+    tilePos(x,y) {
+        this.tilePosX = x;
+        this.tilePosY = y;
     }
 
     onUpdate() {

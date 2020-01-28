@@ -1,67 +1,31 @@
 (function () {
     'use strict';
 
+    // import Bullet from "./Bullet";
     /**
-     * 子弹脚本，实现子弹飞行逻辑及对象池回收机制
-     */
-    class Bullet extends Laya.Script {
-        constructor() { super(); }
-        onEnable() {
-            //设置初始速度
-            var rig = this.owner.getComponent(Laya.RigidBody);
-            rig.setVelocity({ x: 0, y: -10 });
-        }
-
-        onTriggerEnter(other, self, contact) {
-            //如果被碰到，则移除子弹
-            this.owner.removeSelf();
-        }
-
-        onUpdate() {
-            //如果子弹超出屏幕，则移除子弹
-            if (this.owner.y < -10) {
-                this.owner.removeSelf();
-            }
-        }
-
-        onDisable() {
-            //子弹被移除时，回收子弹到对象池，方便下次复用，减少对象创建开销
-            Laya.Pool.recover("bullet", this.owner);
-        }
-    }
-
-    /**
-     * 游戏控制脚本。定义了几个dropBox，bullet，createBoxInterval等变量，能够在IDE显示及设置该变量
+     * 游戏控制脚本。定义了几个dropBox，bullet等变量，能够在IDE显示及设置该变量
      * 更多类型定义，请参考官方文档
      */
     class GameControl extends Laya.Script {
         /** @prop {name:dropBox,tips:"掉落容器预制体对象",type:Prefab}*/
-        /** @prop {name:bullet,tips:"子弹预制体对象",type:Prefab}*/
-        /** @prop {name:createBoxInterval,tips:"间隔多少毫秒创建一个下跌的容器",type:int,default:1000}*/
 
         constructor() { super(); }
         onEnable() {
-            //间隔多少毫秒创建一个下跌的容器
-            this.createBoxInterval = 1000;
-            //开始时间
-            this._time = Date.now();
             //是否已经开始游戏
             this._started = false;
             //子弹和盒子所在的容器对象
             this._gameBox = this.owner.getChildByName("gameBox");
+            this.all = [];
         }
 
         onUpdate() {
-            //每间隔一段时间创建一个盒子
-            let now = Date.now();
-            if (now - this._time > this.createBoxInterval&&this._started) {
-                this._time = now;
-            }
         }
+
         onMouseDown(e) {
             this.dragX = e.stageX;
             this.dragY = e.stageY;
         }
+
         onMouseUp(e) {
             let x = e.stageX - this.dragX;
             let y = e.stageY - this.dragY;
@@ -71,8 +35,10 @@
                 }
                 if (x > 0) {
                     this.createMultiBoxes(3, 'left');
+                    this.moveAll('right');
                 } else {
                     this.createMultiBoxes(3, 'right');
+                    this.moveAll('left');
                 }
             } else {
                 if (this.debugDrag) {
@@ -80,42 +46,62 @@
                 }
                 if (y > 0) {
                     this.createMultiBoxes(3, 'top');
+                    this.moveAll('down');
                 } else {
                     this.createMultiBoxes(3, 'bottom');
+                    this.moveAll('up');
                 }
             }
         }
+
+        moveAll(direction) {
+            Laya.stage.event("move",direction);
+            let all = this.all;
+
+            if ('left' == direction) {
+            } else if ('right' == direction) {
+            } else if ('up' == direction) {
+            } else {
+            }
+        }
+
         createMultiBoxes(count, birthPlace) {
             for(let i = 0; i< count; i++) {
                 this.createBox(birthPlace);
             }
 
         }
+
         createBox(birthPlace) {
-            alert(birthPlace);
             let boxWidth = 100;
             //使用对象池创建盒子
             let box = Laya.Pool.getItemByCreateFun("dropBox", this.dropBox.create, this.dropBox);
+            console.log(box);
             if ('left' == birthPlace) {
-                alert(Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
-                box.pos(0, Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+                let tileY = Math.floor(Math.random() * (Laya.stage.height / boxWidth - 2));
+                box.pos(0, tileY * boxWidth + boxWidth);
             } else if ('right' == birthPlace) {
-                box.pos(Laya.stage.width - boxWidth, Math.floor(Math.random() * (Laya.stage.height / boxWidth)) * boxWidth);
+                let tileX = 11;
+                let tileY = Math.floor(Math.random() * (Laya.stage.height / boxWidth - 2));
+                box.pos(Laya.stage.width - boxWidth * 1, tileY * boxWidth + boxWidth);
             } else if ('top' == birthPlace) {
-                box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, 0);
+                let tileX = Math.floor(Math.random() * (Laya.stage.width / boxWidth - 2));
+                box.pos(tileX * boxWidth + boxWidth, 0);
             } else  {
-                box.pos(Math.floor(Math.random() * (Laya.stage.width / boxWidth)) * boxWidth, Laya.stage.height - boxWidth);
+                let tileX = Math.floor(Math.random() * (Laya.stage.width / boxWidth - 2));
+                let tileY = 11;
+                box.pos(tileX * boxWidth + boxWidth, Laya.stage.height - boxWidth);
             }
             this._gameBox.addChild(box);
+            this.all.push(box);
+
+            Laya.stage.event("create", box);
+
         }
 
         onStageClick(e) {
             //停止事件冒泡，提高性能，当然也可以不要
             e.stopPropagation();
-            //舞台被点击后，使用对象池创建子弹
-            let flyer = Laya.Pool.getItemByCreateFun("bullet", this.bullet.create, this.bullet);
-            flyer.pos(Laya.stage.mouseX, Laya.stage.mouseY);
-            this._gameBox.addChild(flyer);
         }
 
         /**开始游戏，通过激活本脚本方式开始游戏*/
@@ -130,7 +116,6 @@
         stopGame() {
             this._started = false;
             this.enabled = false;
-            this.createBoxInterval = 1000;
             this._gameBox.removeChildren();
         }
     }
@@ -194,6 +179,26 @@
             //等级文本对象引用
             this._text = this.owner.getChildByName("levelTxt");
             this._text.text = this.level + "";
+            this.tilePosX = -1;
+            this.tilePosY = -1;
+            this.tileLeft = null;
+            this.tileRight = null;
+            this.tileUp = null;
+            this.tileDown = null;
+            Laya.stage.on("move",this, this.onMove);
+            Laya.stage.on("create",this, this.onCreate);
+        }
+
+        onMove(direction) {
+            alert(direction);
+        }
+
+        onCreate(dropBox) {
+            alert("create"+dropBox);
+        }
+        tilePos(x,y) {
+            this.tilePosX = x;
+            this.tilePosY = y;
         }
 
         onUpdate() {
@@ -254,7 +259,6 @@
             let reg = Laya.ClassUtils.regClass;
     		reg("script/GameUI.js",GameUI);
     		reg("script/GameControl.js",GameControl);
-    		reg("script/Bullet.js",Bullet);
     		reg("script/DropBox.js",DropBox);
         }
     }
