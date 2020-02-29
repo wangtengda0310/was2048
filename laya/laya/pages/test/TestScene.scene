@@ -2,12 +2,12 @@
     "x":0,
     "type":"Scene",
     "selectedBox":1,
-    "selecteID":22,
+    "selecteID":3,
     "searchKey":"Scene,gameBox",
     "referenceLines":null,
     "props":{"width":1200,"sceneColor":"#000000","runtime":"script/GameUI.js","name":"gameBox","height":1200},
     "nodeParent":-1,
-    "maxID":28,
+    "maxID":31,
     "label":"gameBox",
     "isOpen":true,
     "isDirectory":true,
@@ -80,14 +80,13 @@
             "props":{"y":0,"x":0,"name":"UI"},
             "nodeParent":1,
             "label":"UI",
-            "isOpen":true,
+            "isOpen":false,
             "isDirectory":true,
             "isAniNode":true,
             "hasChild":true,
             "compId":14,
             "child":[
                 {
-                    "x":30,
                     "type":"Label",
                     "searchKey":"Label,scoreLbl",
                     "props":{"y":50,"x":158,"width":272,"var":"scoreLbl","height":47,"fontSize":40,"color":"#51c524","align":"center"},
@@ -101,7 +100,6 @@
                         ]
                 },
                 {
-                    "x":30,
                     "type":"Label",
                     "searchKey":"Label,tipLbll",
                     "props":{"y":0,"x":0,"width":640,"var":"tipLbll","valign":"middle","text":"别让箱子掉下来\\n\\n点击屏幕开始游戏","height":1136,"fontSize":40,"color":"#c6302e","align":"center"},

@@ -3,7 +3,7 @@
     "type":"Sprite",
     "selectedBox":1,
     "searchKey":"Sprite,levelTxt",
-    "props":{"y":0,"x":0,"texture":"test/b1.png","presetID":1,"preset":"laya/pages/prefab/DropBox.prefab","pivotY":0,"pivotX":0,"name":"levelTxt","isPresetRoot":true,"group":1,"gravityScale":0.5},
+    "props":{"y":0,"x":0,"texture":"test/b1.png","runtime":"script/Tile.js","presetID":1,"preset":"laya/pages/prefab/DropBox.prefab","pivotY":0,"pivotX":0,"name":"levelTxt","isPresetRoot":true,"group":1,"gravityScale":0.5},
     "nodeParent":-1,
     "maxID":9,
     "label":"levelTxt",
