@@ -63,86 +63,64 @@ export default class GameControl extends Laya.Script {
     moveAll(direction) {
         Laya.stage.event("move",direction);
         
-        let boxes;
-        if ("right"==direction) {
-            boxes = this.rightTiles;
+        function move(boxes, funcName, callback) {
+
             for(let box of boxes) {
                 let tobeMove = box;
                 while(tobeMove) {
-                    this.onMove(tobeMove, direction);
-                    tobeMove = tobeMove.tileLeft;
-                }
-            }
-        } else if ("left"==direction) {
-            boxes = this.leftTiles;
-            for(let box of boxes) {
-                let tobeMove = box;
-                while(tobeMove) {
-                    this.onMove(tobeMove, direction);
-                    tobeMove = tobeMove.tileRight;
-                }
-            }
-        } else if ("down"==direction) {
-            boxes = this.bottomTiles;
-            for(let box of boxes) {
-                let tobeMove = box;
-                while(tobeMove) {
-                    this.onMove(tobeMove, direction);
-                    tobeMove = tobeMove.tileUp;
-                }
-            }
-        } else {
-            boxes = this.topTiles;
-            for(let box of boxes) {
-                let tobeMove = box;
-                while(tobeMove) {
-                    this.onMove(tobeMove, direction);
-                    tobeMove = tobeMove.tileDown;
+                    callback(tobeMove);
+                    tobeMove = tobeMove[funcName];
                 }
             }
         }
+        let callback = this.onMove.bind(this,direction);
+        
+        if ("right"==direction) {
+            move(this.rightTiles,"tileLeft",callback);
+        } else if ("left"==direction) {
+            move(this.leftTiles,"tileRight",callback);
+        } else if ("down"==direction) {
+            move(this.bottomTiles,"tileUp",callback);
+        } else {
+            move(this.topTiles,"tileDown",callback);
+        }
+        Laya.stage.event("onPos", box);
     }
 
-    onMove(box, direction) {
+    onMove(direction, box) {
         const boxWidth = 100;
-        const mapSize = this.mapSize;
 
         let toX = box.x, toY = box.y;
-        if ("right"==direction) {
-            box.tilePosX = mapSize;
-            let right = box.tileRight;
+        function calcPosLittle(tp,nextNextName) {
+            let right = box[nextNextName];
             while(right) {
-                right = right.tileRight;
-                box.tilePosX -= 1;
+                right = right[nextNextName];
+                tp -= 1;
             }
+            return tp;
+        }
+        function calcPosGreater(tp,nextNextName) {
+            let left = box[nextNextName];
+            while(left) {
+                left = left[nextNextName];
+                tp += 1;
+            }
+            return tp;
+        }
+        if ("right"==direction) {
+            box.tilePosX = calcPosLittle(this.mapSize,"tileRight");
             toX = box.tilePosX * boxWidth;
         } else if ("left"==direction) {
-            box.tilePosX = 1;
-            let left = box.tileLeft;
-            while(left) {
-                left = left.tileLeft;
-                box.tilePosX += 1;
-            }
+            box.tilePosX = calcPosGreater(1,"tileLeft");
             toX = box.tilePosX * boxWidth;
         } else if ("down"==direction) {
-            box.tilePosY = mapSize-1;
-            let down = box.tileDown;
-            while(down) {
-                down = down.tileDown;
-                box.tilePosY -= 1;
-            }
+            box.tilePosY = calcPosLittle(this.mapSize,"tileDown");
             toY = box.tilePosY * boxWidth;
         } else {
-            let up = box.tileUp;
-            box.tilePosY = 1;
-            while(up) {
-                up = up.tileUp;
-                box.tilePosY += 1;
-            }
+            box.tilePosY = calcPosGreater(1,"tileUp");
             toY = box.tilePosY * boxWidth;
         }
 
-        Laya.stage.event("onPos", box);
         Laya.Tween.to(box,{x : toX, y: toY}, 200);
     }
 
