@@ -84,7 +84,6 @@ export default class GameControl extends Laya.Script {
         } else {
             move(this.topTiles,"tileDown",callback);
         }
-        Laya.stage.event("onPos", box);
     }
 
     onMove(direction, box) {
@@ -121,6 +120,7 @@ export default class GameControl extends Laya.Script {
             toY = box.tilePosY * boxWidth;
         }
 
+        Laya.stage.event("onPos", box);
         Laya.Tween.to(box,{x : toX, y: toY}, 200);
     }
 
