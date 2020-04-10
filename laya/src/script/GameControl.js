@@ -16,8 +16,6 @@ export default class GameControl extends Laya.Script {
         this.mapSize = 10;
     }
     onEnable() {
-        //是否已经开始游戏
-        this._started = false;
         //子弹和盒子所在的容器对象
         this._gameBox = this.owner.getChildByName("gameBox");
     }
@@ -61,67 +59,56 @@ export default class GameControl extends Laya.Script {
     }
 
     moveAll(direction) {
-        Laya.stage.event("move",direction);
         
+        function calcPosLittle(nextName) {
+            let tp = mapSize-1;
+            let next = box[nextName];
+            while(next) {
+                next = next[nextName];
+                tp -= 1;
+            }
+            return tp;
+        }
+        function calcPosGreater(nextName) {
+            let tp = 0;
+            let next = box[nextName];
+            while(next) {
+                next = next[nextName];
+                tp += 1;
+            }
+            return tp;
+        }
+
         function move(boxes, funcName, callback) {
 
             for(let box of boxes) {
                 let tobeMove = box;
                 while(tobeMove) {
-                    callback(tobeMove);
+                    callback(tobeMove,this.mapSize);
                     tobeMove = tobeMove[funcName];
                 }
             }
         }
-        let callback = this.onMove.bind(this,direction);
+        let callback = this.onMove.bind(box,direction);
         
         if ("right"==direction) {
+            calcPosLittle.call(box,"tileRight");
             move(this.rightTiles,"tileLeft",callback);
         } else if ("left"==direction) {
+            calcPosGreater.call(box,"tileLeft");
             move(this.leftTiles,"tileRight",callback);
         } else if ("down"==direction) {
+            calcPosLittle.call(box,"tileDown")
             move(this.bottomTiles,"tileUp",callback);
         } else {
+            calcPosGreater.call(box,"tileUp");
             move(this.topTiles,"tileDown",callback);
         }
     }
+    onMove(direction,mapSize) {
+        let box = this;
 
-    onMove(direction, box) {
-        const boxWidth = 100;
-
-        let toX = box.x, toY = box.y;
-        function calcPosLittle(tp,nextNextName) {
-            let right = box[nextNextName];
-            while(right) {
-                right = right[nextNextName];
-                tp -= 1;
-            }
-            return tp;
-        }
-        function calcPosGreater(tp,nextNextName) {
-            let left = box[nextNextName];
-            while(left) {
-                left = left[nextNextName];
-                tp += 1;
-            }
-            return tp;
-        }
-        if ("right"==direction) {
-            box.tilePosX = calcPosLittle(this.mapSize,"tileRight");
-            toX = box.tilePosX * boxWidth;
-        } else if ("left"==direction) {
-            box.tilePosX = calcPosGreater(1,"tileLeft");
-            toX = box.tilePosX * boxWidth;
-        } else if ("down"==direction) {
-            box.tilePosY = calcPosLittle(this.mapSize,"tileDown");
-            toY = box.tilePosY * boxWidth;
-        } else {
-            box.tilePosY = calcPosGreater(1,"tileUp");
-            toY = box.tilePosY * boxWidth;
-        }
-
-        Laya.stage.event("onPos", box);
-        Laya.Tween.to(box,{x : toX, y: toY}, 200);
+        box.showMove();
     }
 
     createMultiBoxes(count, birthRegion) {
@@ -153,6 +140,7 @@ export default class GameControl extends Laya.Script {
         } else if ('right' == birthRegion) {
             tileX = this.mapSize;
             tileY = Math.floor(Math.random() * (Laya.stage.height / boxWidth - 2));
+            tileY = 2; // todo remove after debug
             box.pos(Laya.stage.width - boxWidth * 1, tileY * boxWidth + boxWidth);
 
             let originRight = this.rightTiles[tileY];
@@ -180,6 +168,7 @@ export default class GameControl extends Laya.Script {
             }
         } else  {
             tileX = Math.floor(Math.random() * (Laya.stage.width / boxWidth - 2));
+            tileX = 2; // todo remove after debug
             tileY = this.mapSize;
             box.pos(tileX * boxWidth + boxWidth, Laya.stage.height - boxWidth);
 
@@ -195,7 +184,6 @@ export default class GameControl extends Laya.Script {
         }
         box.tilePos(tileX, tileY); // TODO constructor
         this._gameBox.addChild(box);
-        Laya.stage.event("onPos", box);
     }
 
     onStageClick(e) {
@@ -203,18 +191,4 @@ export default class GameControl extends Laya.Script {
         e.stopPropagation();
     }
 
-    /**开始游戏，通过激活本脚本方式开始游戏*/
-    startGame() {
-        if (!this._started) {
-            this._started = true;
-            this.enabled = true;
-        }
-    }
-
-    /**结束游戏，通过非激活本脚本停止游戏 */
-    stopGame() {
-        this._started = false;
-        this.enabled = false;
-        this._gameBox.removeChildren();
-    }
 }

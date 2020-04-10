@@ -2,7 +2,6 @@
 import GameUI from "./script/GameUI"
 import GameControl from "./script/GameControl"
 import Tile from "./script/Tile"
-import DropBox from "./script/DropBox"
 
 export default class GameConfig {
     static init() {
@@ -11,12 +10,11 @@ export default class GameConfig {
 		reg("script/GameUI.js",GameUI);
 		reg("script/GameControl.js",GameControl);
 		reg("script/Tile.js",Tile);
-		reg("script/DropBox.js",DropBox);
     }
 }
-GameConfig.width = 1200;
-GameConfig.height = 1200;
-GameConfig.scaleMode ="fixedwidth";
+GameConfig.width = 1000;
+GameConfig.height = 1000;
+GameConfig.scaleMode ="showall";
 GameConfig.screenMode = "none";
 GameConfig.alignV = "middle";
 GameConfig.alignH = "center";

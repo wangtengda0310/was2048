@@ -1,73 +1,49 @@
 export default class Tile extends Laya.Sprite {
     constructor() {
         super();
-        this.tilePosX = -1;
-        this.tilePosY = -1;
-        Laya.stage.on("move",this, this.onMove);
-        Laya.stage.on("onPos",this, this.onPos);
+        this._tilePosX = -1;
+        this._tilePosY = -1;
         this.tileLeft = null;
         this.tileRight = null;
         this.tileUp = null;
         this.tileDown = null;
     }
 
-    onMove(direction) {
+    onEnable() {
+        //盒子等级
+        this.level = Math.round(Math.random() * 5) + 1;
+        //等级文本对象引用
+        this._text = this.getChildByName("levelTxt");
+        this._text.text = this.level + "";
+    }
+    onDisable() {
+        //盒子被移除时，回收盒子到对象池，方便下次复用，减少对象创建开销。
+        Laya.Pool.recover("dropBox", this);
     }
 
-    onPos(newBox) {
-        // if(newBox == this) return;
-        // if(newBox.tilePosX != this.tilePosX && newBox.tilePosY != this.tilePosY) return;
-
-        // if(newBox.tilePosX == this.tilePosX && newBox.tilePosY <= 0 && !this.tileUp) {
-        //     this.tileUp = newBox;
-        //     newBox.tileDown = this;
-        // }
-        // if(newBox.tilePosX == this.tilePosX && newBox.tilePosY > 5 && !this.tileDown) {
-        //     this.tileDown = newBox;
-        //     newBox.tileUp = this;
-        // }
-        // if(newBox.tilePosY == this.tilePosY && newBox.tilePosX <= 0 && !this.tileLeft) {
-        //     this.tileLeft = newBox;
-        //     newBox.tileRight = this;
-        // }
-        // if(newBox.tilePosY == this.tilePosY && newBox.tilePosX > 5 && !this.tileRight) {
-        //     this.tileRight = newBox;
-        //     newBox.tileLeft = this;
-        // }
-
-        // if(newBox.tilePosX == this.tilePosX) {
-        //     this.insertH();
-        // }
-        // if(newBox.tilePosY == this.tilePosY) {
-        //     this.insertV();
-        // }
+    showMove() {
+        const boxWidth = 100;
+        let toX = box.tilePosX * boxWidth;
+        let toY = box.tilePosY * boxWidth;
+        Laya.Tween.to(box,{x : toX, y: toY}, 200);
     }
-
-    insertH(tile) {
-        if(tile.tilePosX > this.tilePosX) {
-            let current = this;
-            while(tile.tilePosX > current.tilePosX){
-                current = current.tileRight;
-            }
-            let right = current.tileRight;
-            current.right = tile;
-            tile.left = current;
-            tile.right = right;
-        }
-        if(tile.tilePosX < this.tilePosX) {
-            let current = this;
-            while(tile.tilePosX < current.tilePosX) {
-                current = current.tileLeft;
-            }
-        }
-    }
-    insertV(tile) {
-    }
-
     tilePos(x,y) {
         this.tilePosX = x;
         this.tilePosY = y;
-        console.info("tilePosX", this.tilePosX , "tilePosY", this.tilePosY);
+    }
+
+    get tilePosX() {
+        return this._tilePosX;
+    }
+    set tilePosX(x) {
+        this._tilePosX = x;
+    }
+
+    get tilePosY() {
+        return this._tilePosY;
+    }
+    set tilePosY(y) {
+        this._tilePosY = y;
     }
 
     toString() {

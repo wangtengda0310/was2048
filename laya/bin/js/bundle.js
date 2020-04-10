@@ -19,8 +19,6 @@
             this.mapSize = 10;
         }
         onEnable() {
-            //是否已经开始游戏
-            this._started = false;
             //子弹和盒子所在的容器对象
             this._gameBox = this.owner.getChildByName("gameBox");
         }
@@ -64,67 +62,56 @@
         }
 
         moveAll(direction) {
-            Laya.stage.event("move",direction);
             
+            function calcPosLittle(nextName) {
+                let tp = mapSize-1;
+                let next = box[nextName];
+                while(next) {
+                    next = next[nextName];
+                    tp -= 1;
+                }
+                return tp;
+            }
+            function calcPosGreater(nextName) {
+                let tp = 0;
+                let next = box[nextName];
+                while(next) {
+                    next = next[nextName];
+                    tp += 1;
+                }
+                return tp;
+            }
+
             function move(boxes, funcName, callback) {
 
                 for(let box of boxes) {
                     let tobeMove = box;
                     while(tobeMove) {
-                        callback(tobeMove);
+                        callback(tobeMove,this.mapSize);
                         tobeMove = tobeMove[funcName];
                     }
                 }
             }
-            let callback = this.onMove.bind(this,direction);
+            let callback = this.onMove.bind(box,direction);
             
             if ("right"==direction) {
+                calcPosLittle.call(box,"tileRight");
                 move(this.rightTiles,"tileLeft",callback);
             } else if ("left"==direction) {
+                calcPosGreater.call(box,"tileLeft");
                 move(this.leftTiles,"tileRight",callback);
             } else if ("down"==direction) {
+                calcPosLittle.call(box,"tileDown");
                 move(this.bottomTiles,"tileUp",callback);
             } else {
+                calcPosGreater.call(box,"tileUp");
                 move(this.topTiles,"tileDown",callback);
             }
-            Laya.stage.event("onPos", box);
         }
+        onMove(direction,mapSize) {
+            let box = this;
 
-        onMove(direction, box) {
-            const boxWidth = 100;
-
-            let toX = box.x, toY = box.y;
-            function calcPosLittle(tp,nextNextName) {
-                let right = box[nextNextName];
-                while(right) {
-                    right = right[nextNextName];
-                    tp -= 1;
-                }
-                return tp;
-            }
-            function calcPosGreater(tp,nextNextName) {
-                let left = box[nextNextName];
-                while(left) {
-                    left = left[nextNextName];
-                    tp += 1;
-                }
-                return tp;
-            }
-            if ("right"==direction) {
-                box.tilePosX = calcPosLittle(this.mapSize,"tileRight");
-                toX = box.tilePosX * boxWidth;
-            } else if ("left"==direction) {
-                box.tilePosX = calcPosGreater(1,"tileLeft");
-                toX = box.tilePosX * boxWidth;
-            } else if ("down"==direction) {
-                box.tilePosY = calcPosLittle(this.mapSize,"tileDown");
-                toY = box.tilePosY * boxWidth;
-            } else {
-                box.tilePosY = calcPosGreater(1,"tileUp");
-                toY = box.tilePosY * boxWidth;
-            }
-
-            Laya.Tween.to(box,{x : toX, y: toY}, 200);
+            box.showMove();
         }
 
         createMultiBoxes(count, birthRegion) {
@@ -156,6 +143,7 @@
             } else if ('right' == birthRegion) {
                 tileX = this.mapSize;
                 tileY = Math.floor(Math.random() * (Laya.stage.height / boxWidth - 2));
+                tileY = 2; // todo remove after debug
                 box.pos(Laya.stage.width - boxWidth * 1, tileY * boxWidth + boxWidth);
 
                 let originRight = this.rightTiles[tileY];
@@ -183,6 +171,7 @@
                 }
             } else  {
                 tileX = Math.floor(Math.random() * (Laya.stage.width / boxWidth - 2));
+                tileX = 2; // todo remove after debug
                 tileY = this.mapSize;
                 box.pos(tileX * boxWidth + boxWidth, Laya.stage.height - boxWidth);
 
@@ -198,7 +187,6 @@
             }
             box.tilePos(tileX, tileY); // TODO constructor
             this._gameBox.addChild(box);
-            Laya.stage.event("onPos", box);
         }
 
         onStageClick(e) {
@@ -206,20 +194,6 @@
             e.stopPropagation();
         }
 
-        /**开始游戏，通过激活本脚本方式开始游戏*/
-        startGame() {
-            if (!this._started) {
-                this._started = true;
-                this.enabled = true;
-            }
-        }
-
-        /**结束游戏，通过非激活本脚本停止游戏 */
-        stopGame() {
-            this._started = false;
-            this.enabled = false;
-            this._gameBox.removeChildren();
-        }
     }
 
     /**
@@ -241,172 +215,60 @@
         onEnable() {
             //戏控制脚本引用，避免每次获取组件带来不必要的性能开销
             this._control = this.getComponent(GameControl);
-            //点击提示文字，开始游戏
-            this.tipLbll.on(Laya.Event.CLICK, this, this.onTipClick);
         }
 
-        onTipClick(e) {
-            this.tipLbll.visible = false;
-            this._score = 0;
-            this.scoreLbl.text = "";
-            this._control.startGame();
-        }
-
-        /**增加分数 */
-        addScore(value) {
-            this._score += value;
-            this.scoreLbl.changeText("分数：" + this._score);
-            //随着分数越高，难度增大
-            if (this._control.createBoxInterval > 600 && this._score % 20 == 0) this._control.createBoxInterval -= 20;
-        }
-
-        /**停止游戏 */
-        stopGame() {
-            this.tipLbll.visible = true;
-            this.tipLbll.text = "游戏结束了，点击屏幕重新开始";
-            this._control.stopGame();
-        }
     }
 
     class Tile extends Laya.Sprite {
         constructor() {
             super();
-            this.tilePosX = -1;
-            this.tilePosY = -1;
-            Laya.stage.on("move",this, this.onMove);
-            Laya.stage.on("onPos",this, this.onPos);
+            this._tilePosX = -1;
+            this._tilePosY = -1;
             this.tileLeft = null;
             this.tileRight = null;
             this.tileUp = null;
             this.tileDown = null;
         }
 
-        onMove(direction) {
+        onEnable() {
+            //盒子等级
+            this.level = Math.round(Math.random() * 5) + 1;
+            //等级文本对象引用
+            this._text = this.getChildByName("levelTxt");
+            this._text.text = this.level + "";
+        }
+        onDisable() {
+            //盒子被移除时，回收盒子到对象池，方便下次复用，减少对象创建开销。
+            Laya.Pool.recover("dropBox", this);
         }
 
-        onPos(newBox) {
-            // if(newBox == this) return;
-            // if(newBox.tilePosX != this.tilePosX && newBox.tilePosY != this.tilePosY) return;
-
-            // if(newBox.tilePosX == this.tilePosX && newBox.tilePosY <= 0 && !this.tileUp) {
-            //     this.tileUp = newBox;
-            //     newBox.tileDown = this;
-            // }
-            // if(newBox.tilePosX == this.tilePosX && newBox.tilePosY > 5 && !this.tileDown) {
-            //     this.tileDown = newBox;
-            //     newBox.tileUp = this;
-            // }
-            // if(newBox.tilePosY == this.tilePosY && newBox.tilePosX <= 0 && !this.tileLeft) {
-            //     this.tileLeft = newBox;
-            //     newBox.tileRight = this;
-            // }
-            // if(newBox.tilePosY == this.tilePosY && newBox.tilePosX > 5 && !this.tileRight) {
-            //     this.tileRight = newBox;
-            //     newBox.tileLeft = this;
-            // }
-
-            // if(newBox.tilePosX == this.tilePosX) {
-            //     this.insertH();
-            // }
-            // if(newBox.tilePosY == this.tilePosY) {
-            //     this.insertV();
-            // }
+        showMove() {
+            const boxWidth = 100;
+            let toX = box.tilePosX * boxWidth;
+            let toY = box.tilePosY * boxWidth;
+            Laya.Tween.to(box,{x : toX, y: toY}, 200);
         }
-
-        insertH(tile) {
-            if(tile.tilePosX > this.tilePosX) {
-                let current = this;
-                while(tile.tilePosX > current.tilePosX){
-                    current = current.tileRight;
-                }
-                let right = current.tileRight;
-                current.right = tile;
-                tile.left = current;
-                tile.right = right;
-            }
-            if(tile.tilePosX < this.tilePosX) {
-                let current = this;
-                while(tile.tilePosX < current.tilePosX) {
-                    current = current.tileLeft;
-                }
-            }
-        }
-        insertV(tile) {
-        }
-
         tilePos(x,y) {
             this.tilePosX = x;
             this.tilePosY = y;
-            console.info("tilePosX", this.tilePosX , "tilePosY", this.tilePosY);
+        }
+
+        get tilePosX() {
+            return this._tilePosX;
+        }
+        set tilePosX(x) {
+            this._tilePosX = x;
+        }
+
+        get tilePosY() {
+            return this._tilePosY;
+        }
+        set tilePosY(y) {
+            this._tilePosY = y;
         }
 
         toString() {
             return "tilePosX:"+this.tilePosX+" tilePosY:"+this.tilePosY;
-        }
-    }
-
-    /**
-     * 掉落盒子脚本，实现盒子碰撞及回收流程
-     */
-    class DropBox extends Laya.Script {
-        constructor() { super(); }
-        onEnable() {
-            /**获得组件引用，避免每次获取组件带来不必要的查询开销 */
-            this._rig = this.owner.getComponent(Laya.RigidBody);
-            //盒子等级
-            this.level = Math.round(Math.random() * 5) + 1;
-            //等级文本对象引用
-            this._text = this.owner.getChildByName("levelTxt");
-            this._text.text = this.level + "";
-        }
-
-        onUpdate() {
-            //让持续盒子旋转
-            // this.owner.rotation++;
-        }
-
-        onTriggerEnter(other, self, contact) {
-            var owner = this.owner;
-            if (other.label === "buttle") {
-                //碰撞到子弹后，增加积分，播放声音特效
-                if (this.level > 1) {
-                    this.level--;
-                    this._text.changeText(this.level + "");
-                    owner.getComponent(Laya.RigidBody).setVelocity({ x: 0, y: -10 });
-                    Laya.SoundManager.playSound("sound/hit.wav");
-                } else {
-                    if (owner.parent) {
-                        let effect = Laya.Pool.getItemByCreateFun("effect", this.createEffect, this);
-                        effect.pos(owner.x, owner.y);
-                        owner.parent.addChild(effect);
-                        effect.play(0, true);
-                        owner.removeSelf();
-                        Laya.SoundManager.playSound("sound/destroy.wav");
-                    }
-                }
-                GameUI.instance.addScore(1);
-            } else if (other.label === "ground") {
-                //只要有一个盒子碰到地板，则停止游戏
-                owner.removeSelf();
-                GameUI.instance.stopGame();
-            }
-        }
-
-        /**使用对象池创建爆炸动画 */
-        createEffect() {
-            let ani = new Laya.Animation();
-            ani.loadAnimation("test/TestAni.ani");
-            ani.on(Laya.Event.COMPLETE, null, recover);
-            function recover() {
-                ani.removeSelf();
-                Laya.Pool.recover("effect", ani);
-            }
-            return ani;
-        }
-
-        onDisable() {
-            //盒子被移除时，回收盒子到对象池，方便下次复用，减少对象创建开销。
-            Laya.Pool.recover("dropBox", this.owner);
         }
     }
 
@@ -419,12 +281,11 @@
     		reg("script/GameUI.js",GameUI);
     		reg("script/GameControl.js",GameControl);
     		reg("script/Tile.js",Tile);
-    		reg("script/DropBox.js",DropBox);
         }
     }
-    GameConfig.width = 1200;
-    GameConfig.height = 1200;
-    GameConfig.scaleMode ="fixedwidth";
+    GameConfig.width = 1000;
+    GameConfig.height = 1000;
+    GameConfig.scaleMode ="showall";
     GameConfig.screenMode = "none";
     GameConfig.alignV = "middle";
     GameConfig.alignH = "center";
@@ -475,3 +336,4 @@
     new Main();
 
 }());
+//# sourceMappingURL=bundle.js.map

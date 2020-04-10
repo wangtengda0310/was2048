@@ -3,3 +3,15 @@ var View=Laya.View;
 var Dialog=Laya.Dialog;
 var Scene=Laya.Scene;
 var REG = Laya.ClassUtils.regClass;
+export class TestSceneUI extends Scene {
+	constructor(){ 
+		super();
+	}
+	createChildren() {
+		super.createChildren();
+		this.createView(TestSceneUI.uiView);
+	}
+	
+}
+TestSceneUI.uiView={"type":"Scene","props":{"width":1000,"runtime":"script/GameUI.js","name":"gameBox","height":1000},"compId":1,"child":[{"type":"Sprite","props":{"y":0,"x":0,"name":"gameBox"},"compId":18},{"type":"Script","props":{"enabled":true,"dropBox":"@Prefab:prefab/DropBox.prefab","bullet":"@Prefab:prefab/Bullet.prefab","runtime":"script/GameControl.js"},"compId":20}],"loadList":["prefab/DropBox.prefab","prefab/Bullet.prefab"],"loadList3D":[]};
+REG("ui.test.TestSceneUI",TestSceneUI);
